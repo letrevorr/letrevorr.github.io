@@ -1,1 +1,756 @@
-as
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projectile Motion · fixed arrow tips</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Lexend', sans-serif;
+    }
+    
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    
+    .app-wrapper {
+      height: 100%;
+      width: 100%;
+      overflow: auto;
+    }
+    
+    .btn-hover {
+      transition: all 0.15s ease-out;
+    }
+    
+    .btn-hover:hover {
+      background-color: #000000;
+      color: #ffffff;
+      transform: scale(1.05);
+    }
+    
+    .btn-hover:active {
+      transform: scale(0.98);
+    }
+    
+    .slider-track {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: #e5e5e5;
+      border-radius: 2px;
+      outline: none;
+    }
+    
+    .slider-track::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #000000;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    
+    .slider-track::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    
+    .slider-track::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #000000;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .checkbox-custom {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #000000;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+    
+    .checkbox-custom:checked {
+      background-color: #000000;
+    }
+    
+    .checkbox-custom:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    
+    .checkbox-custom:hover {
+      transform: scale(1.1);
+    }
+
+    .vector-container {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      background: white;
+      border-radius: 0.5rem;
+      user-select: none;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border: 1px solid #f0f0f0;
+      border-radius: 0.5rem;
+    }
+
+    #play-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    svg, .stat-value, .font-mono, .text-sm, .font-medium, .text-gray-600 {
+      font-family: 'Lexend', sans-serif;
+    }
+    
+    sub {
+      font-size: 0.75em;
+      baseline-shift: sub;
+    }
+
+    .play-button-disabled {
+      opacity: 0.5;
+      filter: grayscale(100%);
+      cursor: not-allowed;
+      pointer-events: none;
+      border-color: #9ca3af !important;
+    }
+    
+    .play-button-disabled:hover {
+      transform: none;
+      background-color: white;
+      color: black;
+    }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 200px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 12px;
+      pointer-events: none;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="h-full bg-white text-black">
+  <div class="app-wrapper flex flex-col">
+    <header class="border-b border-gray-200 px-8 py-4">
+      <h1 id="page-title" class="text-2xl font-semibold tracking-tight">Projectile Motion</h1>
+      <p class="text-sm text-gray-500 mt-1">Interactive physics simulation</p>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row p-6 gap-6">
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="vector-container shadow-sm border border-gray-100">
+          <svg id="projectile-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <!-- Stats bar with range -->
+        <div class="mt-3 flex flex-wrap gap-6 text-sm">
+          <div><p class="text-gray-500 text-xs uppercase tracking-wide">Position X</p><p id="stat-x" class="font-medium">0.00 m</p></div>
+          <div><p class="text-gray-500 text-xs uppercase tracking-wide">Position Y</p><p id="stat-y" class="font-medium">0.00 m</p></div>
+          <div><p class="text-gray-500 text-xs uppercase tracking-wide">Current velocity</p><p id="stat-speed" class="font-medium">0.00 ms⁻¹ (0.0°)</p></div>
+          <div><p class="text-gray-500 text-xs uppercase tracking-wide">Max height</p><p id="stat-max-height" class="font-medium">0.00 m</p></div>
+          <div><p class="text-gray-500 text-xs uppercase tracking-wide">Range</p><p id="stat-range" class="font-medium">0.00 m</p></div>
+        </div>
+      </div>
+
+      <aside class="w-full lg:w-80 flex-shrink-0">
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-5">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-5">Controls</h2>
+          
+          <!-- Play button with tooltip wrapper -->
+          <div class="tooltip w-full mb-3" id="play-tooltip">
+            <button id="play-btn" class="w-full bg-white border-2 border-black text-black font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2">
+              <svg id="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5,3 19,12 5,21" />
+              </svg>
+              <span id="play-text">Play</span>
+            </button>
+            <span class="tooltip-text" id="play-tooltip-text">Cannot play: negative angle with ground</span>
+          </div>
+          
+          <button id="reset-btn" class="btn-hover w-full bg-white border border-gray-300 text-black font-medium py-2 px-4 rounded-lg mb-6 text-sm"> Reset </button>
+
+          <div class="space-y-5">
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Horizontal velocity</label><span id="vx-value" class="text-sm text-gray-600 font-mono">14.1 ms⁻¹</span></div><input type="range" id="vx-slider" class="slider-track w-full" min="0" max="20" step="0.5" value="14.1"></div>
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Vertical velocity</label><span id="vy-value" class="text-sm text-gray-600 font-mono">14.1 ms⁻¹</span></div><input type="range" id="vy-slider" class="slider-track w-full" min="-20" max="20" step="0.5" value="14.1"></div>
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Total velocity</label><span id="v-value" class="text-sm text-gray-600 font-mono">20.0 ms⁻¹</span></div><input type="range" id="v-slider" class="slider-track w-full" min="0" max="28.3" step="0.1" value="20.0"></div>
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Projection angle</label><span id="angle-value" class="text-sm text-gray-600 font-mono">45.0°</span></div><input type="range" id="angle-slider" class="slider-track w-full" min="-90" max="90" step="1" value="45"></div>
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Initial height</label><span id="height-value" class="text-sm text-gray-600 font-mono">0.0 m</span></div><input type="range" id="height-slider" class="slider-track w-full" min="0" max="20" step="0.5" value="0"></div>
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Time</label><span id="time-value" class="text-sm text-gray-600 font-mono">0.00 s</span></div><input type="range" id="time-slider" class="slider-track w-full" min="0" max="10" step="0.01" value="0"></div>
+            <div><div class="flex justify-between items-center mb-2"><label class="text-sm font-medium">Animation speed</label><span id="speed-value" class="text-sm text-gray-600 font-mono">5.0</span></div><input type="range" id="speed-slider" class="slider-track w-full" min="0" max="10" step="0.1" value="5"></div>
+          </div>
+
+          <div class="mt-6 pt-5 border-t border-gray-200">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-4">Display</h3>
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="show-velocity" class="checkbox-custom" checked><span class="text-sm">Velocity vector (red)</span></label>
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="show-components" class="checkbox-custom" checked><span class="text-sm">v_x / v_y components</span></label>
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="show-force" class="checkbox-custom"><span class="text-sm">Force (weight)</span></label>
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="show-acceleration" class="checkbox-custom"><span class="text-sm">Acceleration</span></label>
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="show-trajectory" class="checkbox-custom" checked><span class="text-sm">Trajectory path</span></label>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    (function() {
+      const Xmin = 0;
+      const Xmax = 100;
+      const Ymin = -10;
+      const Ymax = 50;
+
+      const g = 9.81;
+      const MAX_TOTAL = 28.3; // 20√2 ≈ 28.284
+
+      let vx = 14.1, vy = 14.1;
+      let angle = 45;
+      let h0 = 0;
+      let currentTime = 0;
+      let maxTime = 0;
+      let isPlaying = false;
+      let animationId = null;
+      let lastFrameTime = 0;
+      let speedFactor = 5.0;
+
+      let showVelocity = true;
+      let showComponents = true;
+      let showForce = false;
+      let showAcceleration = false;
+      let showTrajectory = true;
+
+      const svg = document.getElementById('projectile-svg');
+      const ns = 'http://www.w3.org/2000/svg';
+
+      const vxSlider = document.getElementById('vx-slider');
+      const vySlider = document.getElementById('vy-slider');
+      const vSlider = document.getElementById('v-slider');
+      const angleSlider = document.getElementById('angle-slider');
+      const heightSlider = document.getElementById('height-slider');
+      const timeSlider = document.getElementById('time-slider');
+      const speedSlider = document.getElementById('speed-slider');
+      const speedSpan = document.getElementById('speed-value');
+
+      const vxSpan = document.getElementById('vx-value');
+      const vySpan = document.getElementById('vy-value');
+      const vSpan = document.getElementById('v-value');
+      const angleSpan = document.getElementById('angle-value');
+      const heightSpan = document.getElementById('height-value');
+      const timeSpan = document.getElementById('time-value');
+
+      const statX = document.getElementById('stat-x');
+      const statY = document.getElementById('stat-y');
+      const statSpeed = document.getElementById('stat-speed');
+      const statMaxHeight = document.getElementById('stat-max-height');
+      const statRange = document.getElementById('stat-range');
+
+      const playBtn = document.getElementById('play-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const playIcon = document.getElementById('play-icon');
+      const playText = document.getElementById('play-text');
+      const playTooltip = document.getElementById('play-tooltip');
+      const tooltipText = document.getElementById('play-tooltip-text');
+
+      vSlider.max = MAX_TOTAL.toFixed(1);
+
+      function getTotalVelocity() { return Math.sqrt(vx * vx + vy * vy); }
+      
+      function getAngleFromComponents() {
+        if (vx === 0) return vy > 0 ? 90 : (vy < 0 ? -90 : 0);
+        return Math.atan2(vy, vx) * 180 / Math.PI;
+      }
+      
+      function calculateMaxTime() {
+        const a = -0.5 * g;
+        const b = vy;
+        const c = h0;
+        const disc = b * b - 4 * a * c;
+        if (disc < 0) return 5;
+        const sqrtDisc = Math.sqrt(disc);
+        const t1 = (-b - sqrtDisc) / (2 * a);
+        const t2 = (-b + sqrtDisc) / (2 * a);
+        let tMax = Math.max(t1, t2, 0);
+        return (tMax > 0 && tMax < 100) ? tMax : 5;
+      }
+      
+      function getPosition(t) {
+        const x = vx * t;
+        const y = h0 + vy * t - 0.5 * g * t * t;
+        return { x, y: Math.max(y, 0) };
+      }
+      
+      function getCurrentVelocity(t) { return { vx, vy: vy - g * t }; }
+      
+      function getMaxHeight() {
+        const tPeak = vy / g;
+        if (tPeak < 0) return h0;
+        const yPeak = h0 + vy * tPeak - 0.5 * g * tPeak * tPeak;
+        return Math.max(yPeak, h0);
+      }
+
+      function getRange() {
+        const tMax = calculateMaxTime();
+        return vx * tMax;
+      }
+
+      function updateMaxTimeAndClamp() {
+        maxTime = calculateMaxTime();
+        if (!maxTime || maxTime < 0.01) maxTime = 5;
+        timeSlider.max = maxTime;
+        if (currentTime > maxTime) { currentTime = maxTime; timeSlider.value = currentTime; }
+        timeSpan.textContent = currentTime.toFixed(2) + ' s';
+      }
+
+      function updateAllFromComponents() {
+        const total = getTotalVelocity();
+        const ang = getAngleFromComponents();
+        vSlider.value = total.toFixed(1);
+        vSpan.textContent = total.toFixed(1) + ' ms⁻¹';
+        angleSlider.value = ang.toFixed(0);
+        angleSpan.textContent = ang.toFixed(1) + '°';
+        angle = ang;
+        updateMaxTimeAndClamp();
+        updatePlayButtonState();
+        redrawSVG();
+      }
+
+      function updateFromTotalAndAngle() {
+        const total = parseFloat(vSlider.value);
+        const angRad = angle * Math.PI / 180;
+        vx = total * Math.cos(angRad);
+        vy = total * Math.sin(angRad);
+        vxSlider.value = vx.toFixed(1);
+        vxSpan.textContent = vx.toFixed(1) + ' ms⁻¹';
+        vySlider.value = vy.toFixed(1);
+        vySpan.textContent = vy.toFixed(1) + ' ms⁻¹';
+        updateMaxTimeAndClamp();
+        updatePlayButtonState();
+        redrawSVG();
+      }
+
+      function updatePlayButtonState() {
+        const shouldDisable = (h0 === 0 && angle < 0);
+        
+        if (shouldDisable) {
+          playBtn.classList.add('play-button-disabled');
+          playBtn.style.pointerEvents = 'none';
+          tooltipText.style.visibility = 'visible';
+          tooltipText.style.opacity = '1';
+          
+          if (isPlaying) {
+            isPlaying = false;
+            updatePlayButton();
+          }
+        } else {
+          playBtn.classList.remove('play-button-disabled');
+          playBtn.style.pointerEvents = 'auto';
+          tooltipText.style.visibility = 'hidden';
+          tooltipText.style.opacity = '0';
+        }
+      }
+
+      function updateStats() {
+        const pos = getPosition(currentTime);
+        const vel = getCurrentVelocity(currentTime);
+        const speed = Math.hypot(vel.vx, vel.vy);
+        const ballAngleDeg = Math.atan2(vel.vy, vel.vx) * 180 / Math.PI;
+        const maxH = getMaxHeight();
+        const range = getRange();
+        statX.textContent = pos.x.toFixed(2) + ' m';
+        statY.textContent = pos.y.toFixed(2) + ' m';
+        statSpeed.textContent = speed.toFixed(2) + ' ms⁻¹ (' + ballAngleDeg.toFixed(1) + '°)';
+        statMaxHeight.textContent = maxH.toFixed(2) + ' m';
+        statRange.textContent = range.toFixed(2) + ' m';
+      }
+
+      function redrawSVG() {
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        const w = 800, h = 500;
+        svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+        const pad = 60;
+        const drawW = w - 2 * pad;
+        const drawH = h - 2 * pad;
+        const worldW = Xmax - Xmin;
+        const worldH = Ymax - Ymin;
+
+        const scaleX = drawW / worldW;
+        const scaleY = drawH / worldH;
+        const scale = Math.min(scaleX, scaleY);
+
+        const originX = pad - Xmin * scale;
+        const originY = h - pad + Ymin * scale;
+
+        function toSVG(x, y) {
+          return { x: originX + x * scale, y: originY - y * scale };
+        }
+
+        const axisGroup = document.createElementNS(ns, 'g');
+        axisGroup.setAttribute('stroke', '#9ca3af');
+        axisGroup.setAttribute('fill', 'none');
+        axisGroup.setAttribute('stroke-width', '1.2');
+
+        let line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', toSVG(0,0).x); line.setAttribute('y1', toSVG(0,0).y);
+        line.setAttribute('x2', toSVG(Xmax,0).x); line.setAttribute('y2', toSVG(Xmax,0).y);
+        axisGroup.appendChild(line);
+
+        line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', toSVG(0, Ymin).x); line.setAttribute('y1', toSVG(0, Ymin).y);
+        line.setAttribute('x2', toSVG(0, Ymax).x); line.setAttribute('y2', toSVG(0, Ymax).y);
+        axisGroup.appendChild(line);
+        svg.appendChild(axisGroup);
+
+        const arrowGroup = document.createElementNS(ns, 'g');
+        arrowGroup.setAttribute('fill', '#4b5563');
+
+        let tipX = toSVG(Xmax,0).x;
+        let arrowX = document.createElementNS(ns, 'polygon');
+        arrowX.setAttribute('points', `${tipX-6},${toSVG(0,0).y-4} ${tipX},${toSVG(0,0).y} ${tipX-6},${toSVG(0,0).y+4}`);
+        arrowGroup.appendChild(arrowX);
+
+        let tipY = toSVG(0, Ymax).y;
+        let arrowY = document.createElementNS(ns, 'polygon');
+        arrowY.setAttribute('points', `${toSVG(0,0).x-4},${tipY+6} ${toSVG(0,0).x},${tipY} ${toSVG(0,0).x+4},${tipY+6}`);
+        arrowGroup.appendChild(arrowY);
+        svg.appendChild(arrowGroup);
+
+        const labelGroup = document.createElementNS(ns, 'g');
+        labelGroup.setAttribute('fill', '#374151');
+        labelGroup.setAttribute('font-size', '11');
+        labelGroup.setAttribute('font-weight', '500');
+        labelGroup.setAttribute('font-family', 'Lexend');
+
+        let txt = document.createElementNS(ns, 'text');
+        txt.setAttribute('x', toSVG(Xmax-5,0).x+15); txt.setAttribute('y', toSVG(0,0).y-12);
+        txt.textContent = 'x (m)';
+        labelGroup.appendChild(txt);
+
+        txt = document.createElementNS(ns, 'text');
+        txt.setAttribute('x', toSVG(0,0).x - 4);
+        txt.setAttribute('y', tipY - 18);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.textContent = 'y (m)';
+        labelGroup.appendChild(txt);
+        svg.appendChild(labelGroup);
+
+        const tickGroup = document.createElementNS(ns, 'g');
+        tickGroup.setAttribute('stroke', '#9ca3af');
+        tickGroup.setAttribute('stroke-width', '1');
+        tickGroup.setAttribute('font-family', 'Lexend');
+        tickGroup.setAttribute('fill', '#4b5563');
+        tickGroup.setAttribute('font-size', '10');
+
+        for (let x = 20; x <= Xmax; x += 20) {
+          let p = toSVG(x, 0);
+          let tick = document.createElementNS(ns, 'line');
+          tick.setAttribute('x1', p.x); tick.setAttribute('y1', p.y-5);
+          tick.setAttribute('x2', p.x); tick.setAttribute('y2', p.y+5);
+          tickGroup.appendChild(tick);
+          let lbl = document.createElementNS(ns, 'text');
+          lbl.setAttribute('x', p.x); lbl.setAttribute('y', p.y+18);
+          lbl.setAttribute('text-anchor', 'middle');
+          lbl.textContent = x;
+          tickGroup.appendChild(lbl);
+        }
+
+        for (let y = -10; y <= Ymax; y += 10) {
+          let p = toSVG(0, y);
+          let tick = document.createElementNS(ns, 'line');
+          tick.setAttribute('x1', p.x-5); tick.setAttribute('y1', p.y);
+          tick.setAttribute('x2', p.x+5); tick.setAttribute('y2', p.y);
+          tickGroup.appendChild(tick);
+          let lbl = document.createElementNS(ns, 'text');
+          lbl.setAttribute('x', p.x-18); lbl.setAttribute('y', p.y+4);
+          lbl.setAttribute('text-anchor', 'end');
+          lbl.textContent = y;
+          tickGroup.appendChild(lbl);
+        }
+        svg.appendChild(tickGroup);
+
+        if (showTrajectory && maxTime > 0.01) {
+          const steps = 200;
+          let pastPoints = [];
+          for (let i = 0; i <= steps; i++) {
+            let t = (i / steps) * currentTime;
+            if (t > currentTime) break;
+            let pos = getPosition(t);
+            if (pos.x > Xmax) break;
+            if (pos.y < Ymin || pos.y > Ymax) continue;
+            let p = toSVG(pos.x, pos.y);
+            pastPoints.push(`${p.x},${p.y}`);
+          }
+          if (pastPoints.length > 1) {
+            let poly = document.createElementNS(ns, 'polyline');
+            poly.setAttribute('points', pastPoints.join(' '));
+            poly.setAttribute('stroke', '#000');
+            poly.setAttribute('stroke-width', '3');
+            poly.setAttribute('fill', 'none');
+            poly.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(poly);
+          }
+
+          if (currentTime < maxTime - 0.01) {
+            let futurePoints = [];
+            let startPos = getPosition(currentTime);
+            if (startPos.x <= Xmax) {
+              let sp = toSVG(startPos.x, startPos.y);
+              futurePoints.push(`${sp.x},${sp.y}`);
+              for (let i = 1; i <= steps; i++) {
+                let t = currentTime + (i / steps) * (maxTime - currentTime);
+                if (t > maxTime) break;
+                let pos = getPosition(t);
+                if (pos.x > Xmax) break;
+                if (pos.y < Ymin || pos.y > Ymax) continue;
+                let p = toSVG(pos.x, pos.y);
+                futurePoints.push(`${p.x},${p.y}`);
+              }
+              if (futurePoints.length > 1) {
+                let poly = document.createElementNS(ns, 'polyline');
+                poly.setAttribute('points', futurePoints.join(' '));
+                poly.setAttribute('stroke', '#aaa');
+                poly.setAttribute('stroke-width', '2');
+                poly.setAttribute('fill', 'none');
+                poly.setAttribute('stroke-dasharray', '6,4');
+                svg.appendChild(poly);
+              }
+            }
+          }
+        }
+
+        const ballPos = getPosition(currentTime);
+        if (ballPos.x <= Xmax && ballPos.y >= Ymin && ballPos.y <= Ymax) {
+          const ballSVG = toSVG(ballPos.x, ballPos.y);
+          const vel = getCurrentVelocity(currentTime);
+          const vectorScale = 0.5;
+
+          function drawArrow(x1, y1, dx, dy, color, width, label, offsetX = 8, offsetY = -10) {
+            if (dx === 0 && dy === 0) return;
+            
+            // Calculate the tip position exactly at the end of the vector
+            let x2 = x1 + dx * vectorScale * scale * 0.8;
+            let y2 = y1 - dy * vectorScale * scale * 0.8;
+            
+            let group = document.createElementNS(ns, 'g');
+            
+            // Draw the line from start to just before the tip (so tip is at the end)
+            let line = document.createElementNS(ns, 'line');
+            line.setAttribute('x1', x1); 
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2); 
+            line.setAttribute('y2', y2);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', width);
+            line.setAttribute('stroke-linecap', 'round');
+            group.appendChild(line);
+            
+            // Draw arrowhead at the tip (x2, y2)
+            let angle = Math.atan2(y2 - y1, x2 - x1);
+            let headLen = 12;
+            
+            // Calculate the two base points of the arrowhead
+            let leftX = x2 - headLen * Math.cos(angle - 0.3);
+            let leftY = y2 - headLen * Math.sin(angle - 0.3);
+            let rightX = x2 - headLen * Math.cos(angle + 0.3);
+            let rightY = y2 - headLen * Math.sin(angle + 0.3);
+            
+            let poly = document.createElementNS(ns, 'polygon');
+            poly.setAttribute('points', `${x2},${y2} ${leftX},${leftY} ${rightX},${rightY}`);
+            poly.setAttribute('fill', color);
+            group.appendChild(poly);
+            
+            // Add label
+            let txt = document.createElementNS(ns, 'text');
+            let labelX = (x1 + x2) / 2 + offsetX;
+            let labelY = (y1 + y2) / 2 + offsetY;
+            
+            if (label === 'v_x' || label === 'v_y') {
+              let tspan1 = document.createElementNS(ns, 'tspan');
+              tspan1.textContent = 'v';
+              let tspan2 = document.createElementNS(ns, 'tspan');
+              tspan2.setAttribute('baseline-shift', 'sub');
+              tspan2.setAttribute('font-size', '8');
+              tspan2.textContent = label === 'v_x' ? 'x' : 'y';
+              txt.appendChild(tspan1);
+              txt.appendChild(tspan2);
+            } else {
+              txt.textContent = label;
+            }
+            
+            txt.setAttribute('x', labelX);
+            txt.setAttribute('y', labelY);
+            txt.setAttribute('fill', color);
+            txt.setAttribute('font-size', '11');
+            txt.setAttribute('font-weight', '600');
+            group.appendChild(txt);
+            
+            svg.appendChild(group);
+          }
+
+          if (showComponents) {
+            if (Math.abs(vel.vx) > 0.2)
+              drawArrow(ballSVG.x, ballSVG.y, vel.vx, 0, '#3b82f6', 2, 'v_x', 8, -12);
+            if (Math.abs(vel.vy) > 0.2)
+              drawArrow(ballSVG.x, ballSVG.y, 0, vel.vy, '#22c55e', 2, 'v_y', 12, -8);
+          }
+
+          if (showVelocity && (Math.abs(vel.vx) > 0.1 || Math.abs(vel.vy) > 0.1)) {
+            drawArrow(ballSVG.x, ballSVG.y, vel.vx, vel.vy, '#ef4444', 3, 'v', 10, -15);
+          }
+
+          if (showForce) {
+            drawArrow(ballSVG.x, ballSVG.y, 0, -3, '#f97316', 2.5, 'W', 8, -15);
+          }
+
+          if (showAcceleration) {
+            drawArrow(ballSVG.x, ballSVG.y, 0, -4, '#8b5cf6', 2.5, 'a', 10, -15);
+          }
+
+          let circle = document.createElementNS(ns, 'circle');
+          circle.setAttribute('cx', ballSVG.x);
+          circle.setAttribute('cy', ballSVG.y);
+          circle.setAttribute('r', '8');
+          circle.setAttribute('fill', 'white');
+          circle.setAttribute('stroke', 'black');
+          circle.setAttribute('stroke-width', '2');
+          svg.appendChild(circle);
+        }
+
+        updateStats();
+      }
+
+      function animate(now) {
+        if (isPlaying) {
+          if (!lastFrameTime) lastFrameTime = now;
+          const rawDelta = (now - lastFrameTime) / 1000;
+          const speedMultiplier = speedFactor / 5.0;
+          const delta = Math.min(0.05, rawDelta * speedMultiplier);
+          lastFrameTime = now;
+          currentTime += delta;
+          if (currentTime >= maxTime) { currentTime = maxTime; isPlaying = false; updatePlayButton(); }
+          timeSlider.value = currentTime;
+          timeSpan.textContent = currentTime.toFixed(2) + ' s';
+          redrawSVG();
+        } else {
+          lastFrameTime = 0;
+        }
+        animationId = requestAnimationFrame(animate);
+      }
+
+      function updatePlayButton() {
+        if (isPlaying) {
+          playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" />';
+          playText.textContent = 'Pause';
+        } else {
+          playIcon.innerHTML = '<polygon points="5,3 19,12 5,21" />';
+          playText.textContent = 'Play';
+        }
+      }
+
+      vxSlider.addEventListener('input', () => { vx = parseFloat(vxSlider.value); vxSpan.textContent = vx.toFixed(1)+' ms⁻¹'; updateAllFromComponents(); });
+      vySlider.addEventListener('input', () => { vy = parseFloat(vySlider.value); vySpan.textContent = vy.toFixed(1)+' ms⁻¹'; updateAllFromComponents(); });
+      vSlider.addEventListener('input', () => { 
+        const total = parseFloat(vSlider.value);
+        vSpan.textContent = total.toFixed(1) + ' ms⁻¹';
+        updateFromTotalAndAngle(); 
+      });
+      angleSlider.addEventListener('input', () => { angle = parseFloat(angleSlider.value); angleSpan.textContent = angle.toFixed(1)+'°'; updateFromTotalAndAngle(); });
+      heightSlider.addEventListener('input', () => { h0 = parseFloat(heightSlider.value); heightSpan.textContent = h0.toFixed(1)+' m'; updateMaxTimeAndClamp(); updatePlayButtonState(); redrawSVG(); });
+      timeSlider.addEventListener('input', () => { if (isPlaying) { isPlaying = false; updatePlayButton(); } currentTime = parseFloat(timeSlider.value); timeSpan.textContent = currentTime.toFixed(2)+' s'; redrawSVG(); });
+      
+      speedSlider.addEventListener('input', () => {
+        speedFactor = parseFloat(speedSlider.value);
+        speedSpan.textContent = speedFactor.toFixed(1);
+      });
+
+      playBtn.addEventListener('click', () => { 
+        const shouldDisable = (h0 === 0 && angle < 0);
+        if (shouldDisable) return;
+        
+        if (currentTime >= maxTime - 0.01) { 
+          currentTime = 0; 
+          timeSlider.value = 0; 
+          timeSpan.textContent = '0.00 s'; 
+        } 
+        isPlaying = !isPlaying; 
+        updatePlayButton(); 
+        lastFrameTime = 0; 
+        redrawSVG(); 
+      });
+      
+      resetBtn.addEventListener('click', () => { 
+        isPlaying = false; 
+        updatePlayButton(); 
+        currentTime = 0; 
+        timeSlider.value = 0; 
+        timeSpan.textContent = '0.00 s'; 
+        redrawSVG(); 
+      });
+
+      document.getElementById('show-velocity').addEventListener('change', e => { showVelocity = e.target.checked; redrawSVG(); });
+      document.getElementById('show-components').addEventListener('change', e => { showComponents = e.target.checked; redrawSVG(); });
+      document.getElementById('show-force').addEventListener('change', e => { showForce = e.target.checked; redrawSVG(); });
+      document.getElementById('show-acceleration').addEventListener('change', e => { showAcceleration = e.target.checked; redrawSVG(); });
+      document.getElementById('show-trajectory').addEventListener('change', e => { showTrajectory = e.target.checked; redrawSVG(); });
+
+      updateMaxTimeAndClamp();
+      updatePlayButtonState();
+      redrawSVG();
+      animationId = requestAnimationFrame(animate);
+    })();
+  </script>
+</body>
+</html>
