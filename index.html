@@ -21,7 +21,7 @@
     <main class="flex-1 flex flex-col lg:flex-row p-6 gap-6">
       <div class="flex-1 flex flex-col min-w-0">
         <div class="vector-container shadow-sm border border-gray-100">
-          <svg id="projectile-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="projectile-svg" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
         
         <div class="legend">
@@ -29,7 +29,7 @@
           <span class="legend-item"><span class="legend-color" style="background: #e12a2a;"></span> horizontal component (vₓ/ms⁻¹)</span>
           <span class="legend-item"><span class="legend-color" style="background: #3b82f6;"></span> vertical component (vᵧ/ms⁻¹)</span>
           <span class="legend-item"><span class="legend-color" style="background: #f97316;"></span> weight (W/N)</span>
-          <span class="legend-item"><span class="legend-color" style="background: #8b5cf6;"></span> acceleration (a/ms⁻²)</span>
+          <span class="legend-item"><span class="legend-color" style="background: #5900a1;"></span> acceleration (a/ms⁻²)</span>
           <span class="legend-item"><span class="legend-color" style="background: #000;"></span> past trajectory</span>
           <span class="legend-item"><span class="legend-color" style="background: #aaa;"></span> future trajectory</span>
         </div>
@@ -128,7 +128,7 @@
               </div>
               <input type="range" id="time-slider" class="slider-track w-full" min="0" max="10" step="0.01" value="0">
               <div class="flex justify-between text-xs text-gray-400 mt-1">
-                <span>0s</span>
+                <span>0 s</span>
                 <span id="time-peak-mark" class="text-blue-500">peak</span>
                 <span id="time-land-mark" class="text-green-500">land</span>
               </div>
